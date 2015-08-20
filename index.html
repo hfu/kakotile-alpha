@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+<title>kakotile-alpha</title>
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-1.0.0-b1/leaflet.css" />
+<script src="http://cdn.leafletjs.com/leaflet-1.0.0-b1/leaflet.js"></script>
+<script src="http://handygeospatial.github.io/mapsites/js/leaflet-hash.js"></script>
+<style>
+body {width: 100%; height: 100%; overflow: hidden;}
+#map {width: 100%; height: 100%; position: absolute;
+  top: 0; left: 0; margin: 0; padding: 0;}
+[data-status] {
+	background: rgba(0, 0, 0, 0.5);
+	color: white;
+	border: 1px solid black;
+	font-family: Consolas;
+	font-weight: bold;
+	font-size: 28pt;
+	text-align: center;
+}
+[data-status='404'] {
+	background: rgba(127, 0, 0, 0.4);
+}
+[data-status='200'] {
+	background: rgba(0, 127, 0, 0.4);
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+L.PingLayer = L.GridLayer.extend({
+  options : {pane : 'overlayPane'},
+  initialize : function(url, options) {
+    this._url = url;
+    L.setOptions(this, options);
+	},
+  createTile : function(coords, done) {
+    var tile = document.createElement('div');
+    var url = L.Util.template(this._url, coords);
+    var that = this;
+    var x = new XMLHttpRequest();
+    x.open("GET", url, true);
+    x.onreadystatechange = function() {
+      if (done && x.readyState == 4) done(null, tile);
+      tile.setAttribute("data-status", x.status);
+      tile.innerHTML =
+        ((x.status == "200") ? (x.responseText.replace(/,/g, "<br/>")) : "");
+    };
+    x.send();
+    return tile;
+	}
+});
+var map = L.map("map", {
+  zoom : 11, center : [34.0106, 134.6409]
+});
+var hash = L.hash(map);
+L.tileLayer('http://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {
+  attribution: "<a href='http://maps.gsi.go.jp/development/'>地理院タイル・標準地図</a>",
+  minZoom: 7, maxZoom: 13
+}).addTo(map);
+(new L.PingLayer('http://hfu.github.io/kakotile-alpha/kakotile/{z}/{x}/{y}.csv', {
+  attribution: "Kakotile alpha",
+  minZoom: 7, maxZoom: 13
+})).addTo(map);
+</script>
+</body>
+</html>
